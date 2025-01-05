@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -17,7 +18,7 @@ type Server struct {
 	listener net.Listener
 }
 
-func CreateNewServer(cfg Config) *Server {
+func NewServer(cfg Config) *Server {
 	if len(cfg.ListenAddr) == 0 {
 		cfg.ListenAddr = defaultListenAddr
 	}
@@ -30,7 +31,7 @@ func (s *Server) Start() {
 		fmt.Printf("Error starting Redis-Go: %v\n", err)
 	}
 	s.listener = listener
-	fmt.Printf("Redis-Go started. Listening on %s\n", s.ListenAddr)
+	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", s.ListenAddr))
 	defer s.listener.Close()
 	s.acceptLoop()
 }
@@ -39,38 +40,33 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			fmt.Printf("Error accepting connection: %v\n", err)
-			continue
+			log.Fatal(fmt.Sprintf("Error accepting connection: %v\n", err))
 		}
-		s.handleConn(conn)
+		go s.handleConn(conn)
 	}
 }
 
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
-	fmt.Printf("New connection from %s\n", conn.RemoteAddr())
+	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
 
-	message := "Welcome to Redis-Go!\n\n"
-	_, err := conn.Write([]byte(message))
-	if err != nil {
-		fmt.Printf("Error writing to connection: %v\n", err)
-		return
-	}
+	reader := bufio.NewReader(conn)
 
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		messageReceived := scanner.Text()
-		if messageReceived == "exit" {
-			fmt.Printf("Client %s disconnected.\n", conn.RemoteAddr())
-			return
+	for {
+		msg, err := reader.ReadBytes('\n')
+		if err != nil {
+			log.Fatal(fmt.Sprintf("Error writing to connection: %v\n", err))
 		}
-		fmt.Printf("Received: %s\n", messageReceived)
+
+		//_, err := conn.Write([]byte("+OK\r\n"))
+		//conn.Write([]byte("+OK\r\n"))
+		conn.Write([]byte(msg))
 	}
 }
 
 func main() {
 
-	server := CreateNewServer(Config{
+	server := NewServer(Config{
 		ListenAddr: ":6379",
 	})
 	server.Start()
