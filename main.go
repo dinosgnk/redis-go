@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"net"
@@ -50,18 +49,8 @@ func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
 
-	reader := bufio.NewReader(conn)
-
-	for {
-		msg, err := reader.ReadBytes('\n')
-		if err != nil {
-			log.Fatal(fmt.Sprintf("Error writing to connection: %v\n", err))
-		}
-
-		//_, err := conn.Write([]byte("+OK\r\n"))
-		//conn.Write([]byte("+OK\r\n"))
-		conn.Write([]byte(msg))
-	}
+	resp := NewParser(conn)
+	resp.Parse()
 }
 
 func main() {
