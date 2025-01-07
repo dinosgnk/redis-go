@@ -15,13 +15,17 @@ type Config struct {
 type Server struct {
 	Config
 	listener net.Listener
+	kv       *KVStore
 }
 
 func NewServer(cfg Config) *Server {
 	if len(cfg.ListenAddr) == 0 {
 		cfg.ListenAddr = defaultListenAddr
 	}
-	return &Server{Config: cfg}
+	return &Server{
+		Config: cfg,
+		kv:     NewKVStore(),
+	}
 }
 
 func (s *Server) Start() {
@@ -39,7 +43,8 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			log.Fatal(fmt.Sprintf("Error accepting connection: %v\n", err))
+			log.Printf("Error accepting connection: %v\n", err)
+			continue
 		}
 		go s.handleConn(conn)
 	}
