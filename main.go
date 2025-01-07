@@ -14,8 +14,9 @@ type Config struct {
 
 type Server struct {
 	Config
-	listener net.Listener
-	kv       *KVStore
+	listener  net.Listener
+	kv        *KVStore
+	cmdArgsCh chan [][]byte
 }
 
 func NewServer(cfg Config) *Server {
@@ -23,8 +24,9 @@ func NewServer(cfg Config) *Server {
 		cfg.ListenAddr = defaultListenAddr
 	}
 	return &Server{
-		Config: cfg,
-		kv:     NewKVStore(),
+		Config:    cfg,
+		kv:        NewKVStore(),
+		cmdArgsCh: make(chan [][]byte),
 	}
 }
 
@@ -33,9 +35,14 @@ func (s *Server) Start() {
 	if err != nil {
 		fmt.Printf("Error starting Redis-Go: %v\n", err)
 	}
+
 	s.listener = listener
-	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", s.ListenAddr))
 	defer s.listener.Close()
+
+	go s.handleCommandLoop()
+
+	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", s.ListenAddr))
+
 	s.acceptLoop()
 }
 
@@ -46,16 +53,24 @@ func (s *Server) acceptLoop() {
 			log.Printf("Error accepting connection: %v\n", err)
 			continue
 		}
-		go s.handleConn(conn)
+		go s.handleConnection(conn)
 	}
 }
 
-func (s *Server) handleConn(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
 
 	resp := NewParser(conn)
-	resp.Parse()
+	resp.Parse(s.cmdArgsCh)
+}
+
+func (s *Server) handleCommandLoop() {
+	var cmdArgs [][]byte
+	for {
+		cmdArgs = <-s.cmdArgsCh
+		log.Println("Received command: ", string(cmdArgs[0]))
+	}
 }
 
 func main() {

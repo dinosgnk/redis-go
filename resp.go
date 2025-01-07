@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"strconv"
@@ -19,18 +18,18 @@ func NewParser(rd io.Reader) *Parser {
 	}
 }
 
-func (p *Parser) ParseArray(arrayHeader []byte) error {
+func (p *Parser) ParseArray(arrayHeader []byte) [][]byte {
 	// CRLF of 1st line has been removed before calling this function
 	numOfExpectedElements, err := strconv.ParseInt(string(arrayHeader[1:]), 10, 64)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	elements := make([][]byte, 0, numOfExpectedElements)
 	for i := int64(0); i < numOfExpectedElements; i++ {
 		line, err := p.reader.ReadBytes('\n')
 		if err != nil {
-			return err
+			return nil
 		}
 
 		// get line length to get all digits of $ header
@@ -38,9 +37,8 @@ func (p *Parser) ParseArray(arrayHeader []byte) error {
 
 		// read after $ until before CRLF
 		elementLength, err := strconv.ParseInt(string(line[1:lineLength-2]), 10, 64)
-		fmt.Println("Element length", elementLength)
 		if err != nil {
-			return err
+			return nil
 		}
 
 		// element length + CRLF
@@ -49,21 +47,21 @@ func (p *Parser) ParseArray(arrayHeader []byte) error {
 		// read next element + CRLF bytes
 		_, err = io.ReadFull(p.reader, body)
 		if err != nil {
-			return err
+			return nil
 		}
 
 		// append the element to the list, without the trailing CRLF
 		elements = append(elements, body[:len(body)-2])
 	}
 
-	for i, line := range elements {
-		fmt.Printf("Row %d: %s\n", i, string(line))
-	}
+	// for i, line := range elements {
+	// 	fmt.Printf("Row %d: %s\n", i, string(line))
+	// }
 
-	return nil
+	return elements
 }
 
-func (p *Parser) Parse() error {
+func (p *Parser) Parse(cmdArgsCh chan<- [][]byte) error {
 
 	for {
 		line, err := p.reader.ReadBytes('\n')
@@ -76,7 +74,8 @@ func (p *Parser) Parse() error {
 
 		switch _type {
 		case '*':
-			p.ParseArray(line)
+			cmdArgs := p.ParseArray(line)
+			cmdArgsCh <- cmdArgs
 		default:
 			log.Println("TODO")
 			continue
