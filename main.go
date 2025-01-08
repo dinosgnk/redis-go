@@ -16,7 +16,7 @@ type Server struct {
 	Config
 	listener  net.Listener
 	cmdRouter *CommandRouter
-	cmdArgsCh chan [][]byte
+	cmdCh     chan *Command
 }
 
 func NewServer(cfg Config) *Server {
@@ -26,7 +26,7 @@ func NewServer(cfg Config) *Server {
 	return &Server{
 		Config:    cfg,
 		cmdRouter: NewCommandRouter(),
-		cmdArgsCh: make(chan [][]byte),
+		cmdCh:     make(chan *Command),
 	}
 }
 
@@ -60,16 +60,17 @@ func (server *Server) acceptLoop() {
 func (server *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
+	client := NewClient(conn)
 
-	resp := NewParser(conn)
-	resp.Parse(server.cmdArgsCh)
+	resp := NewParser(client.conn)
+	resp.Parse(client, server.cmdCh)
 }
 
 func (server *Server) handleCommandLoop() {
-	var cmdArgs [][]byte
+	var cmd *Command
 	for {
-		cmdArgs = <-server.cmdArgsCh
-		go server.cmdRouter.Dispatch(cmdArgs)
+		cmd = <-server.cmdCh
+		go server.cmdRouter.Dispatch(cmd)
 	}
 }
 

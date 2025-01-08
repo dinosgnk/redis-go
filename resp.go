@@ -57,7 +57,7 @@ func (p *Parser) ParseArray(arrayHeader []byte) [][]byte {
 	return elements
 }
 
-func (p *Parser) Parse(cmdArgsCh chan<- [][]byte) error {
+func (p *Parser) Parse(client *Client, cmdCh chan<- *Command) error {
 
 	for {
 		line, err := p.reader.ReadBytes('\n')
@@ -71,7 +71,8 @@ func (p *Parser) Parse(cmdArgsCh chan<- [][]byte) error {
 		switch _type {
 		case '*':
 			cmdArgs := p.ParseArray(line)
-			cmdArgsCh <- cmdArgs
+			cmd := NewCommand(cmdArgs, client)
+			cmdCh <- cmd
 		default:
 			log.Println("TODO")
 			continue

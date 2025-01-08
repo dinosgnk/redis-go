@@ -12,8 +12,8 @@ func NewCommandHandler() *CommandHandler {
 	}
 }
 
-func (cmdHandler *CommandHandler) Get(cmdArgs [][]byte) {
-	key := cmdArgs[1]
+func (cmdHandler *CommandHandler) Get(cmd *Command) {
+	key := cmd.args[1]
 	val, ok := cmdHandler.kv.Get(key)
 	if !ok {
 		log.Printf("Key %v not found: ", string(key))
@@ -22,8 +22,8 @@ func (cmdHandler *CommandHandler) Get(cmdArgs [][]byte) {
 
 }
 
-func (cmdHandler *CommandHandler) Set(cmdArgs [][]byte) {
-	key := cmdArgs[1]
-	val := cmdArgs[2]
+func (cmdHandler *CommandHandler) Set(cmd *Command) {
+	key := cmd.args[1]
+	val := cmd.args[2]
 	cmdHandler.kv.Set(key, val)
 }

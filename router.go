@@ -15,13 +15,13 @@ func NewCommandRouter() *CommandRouter {
 	}
 }
 
-func (cmdRouter *CommandRouter) Dispatch(cmdArgs [][]byte) {
-	cmd := strings.ToUpper(string(cmdArgs[0]))
-	switch cmd {
+func (cmdRouter *CommandRouter) Dispatch(cmd *Command) {
+	name := strings.ToUpper(string(cmd.name))
+	switch name {
 	case "SET":
-		cmdRouter.cmdHandler.Set(cmdArgs)
+		cmdRouter.cmdHandler.Set(cmd)
 	case "GET":
-		cmdRouter.cmdHandler.Get(cmdArgs)
+		cmdRouter.cmdHandler.Get(cmd)
 	default:
 		log.Println("Unknown command")
 	}
