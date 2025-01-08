@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 const defaultListenAddr = ":6379"
@@ -14,9 +15,9 @@ type Config struct {
 
 type Server struct {
 	Config
-	listener  net.Listener
-	kv        *KVStore
-	cmdArgsCh chan [][]byte
+	listener   net.Listener
+	cmdHandler *CommandHandler
+	cmdArgsCh  chan [][]byte
 }
 
 func NewServer(cfg Config) *Server {
@@ -24,52 +25,60 @@ func NewServer(cfg Config) *Server {
 		cfg.ListenAddr = defaultListenAddr
 	}
 	return &Server{
-		Config:    cfg,
-		kv:        NewKVStore(),
-		cmdArgsCh: make(chan [][]byte),
+		Config:     cfg,
+		cmdHandler: NewCommandHandler(),
+		cmdArgsCh:  make(chan [][]byte),
 	}
 }
 
-func (s *Server) Start() {
-	listener, err := net.Listen("tcp", s.ListenAddr)
+func (server *Server) Start() {
+	listener, err := net.Listen("tcp", server.ListenAddr)
 	if err != nil {
 		fmt.Printf("Error starting Redis-Go: %v\n", err)
 	}
 
-	s.listener = listener
-	defer s.listener.Close()
+	server.listener = listener
+	defer server.listener.Close()
 
-	go s.handleCommandLoop()
+	go server.handleCommandLoop()
 
-	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", s.ListenAddr))
+	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", server.ListenAddr))
 
-	s.acceptLoop()
+	server.acceptLoop()
 }
 
-func (s *Server) acceptLoop() {
+func (server *Server) acceptLoop() {
 	for {
-		conn, err := s.listener.Accept()
+		conn, err := server.listener.Accept()
 		if err != nil {
 			log.Printf("Error accepting connection: %v\n", err)
 			continue
 		}
-		go s.handleConnection(conn)
+		go server.handleConnection(conn)
 	}
 }
 
-func (s *Server) handleConnection(conn net.Conn) {
+func (server *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
 
 	resp := NewParser(conn)
-	resp.Parse(s.cmdArgsCh)
+	resp.Parse(server.cmdArgsCh)
 }
 
-func (s *Server) handleCommandLoop() {
+func (server *Server) handleCommandLoop() {
 	var cmdArgs [][]byte
 	for {
-		cmdArgs = <-s.cmdArgsCh
-		log.Println("Received command: ", string(cmdArgs[0]))
+		cmdArgs = <-server.cmdArgsCh
+		cmd := strings.ToUpper(string(cmdArgs[0]))
+		switch cmd {
+		case "SET":
+			server.cmdHandler.Set(cmdArgs)
+		case "GET":
+			server.cmdHandler.Get(cmdArgs)
+		default:
+			log.Println("Unknown command")
+		}
 	}
 }
 

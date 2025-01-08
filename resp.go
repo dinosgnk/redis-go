@@ -54,10 +54,6 @@ func (p *Parser) ParseArray(arrayHeader []byte) [][]byte {
 		elements = append(elements, body[:len(body)-2])
 	}
 
-	// for i, line := range elements {
-	// 	fmt.Printf("Row %d: %s\n", i, string(line))
-	// }
-
 	return elements
 }
 

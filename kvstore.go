@@ -20,9 +20,8 @@ func (kv *KVStore) Get(key []byte) ([]byte, bool) {
 	return val, ok
 }
 
-func (kv *KVStore) Set(key []byte, val []byte) error {
+func (kv *KVStore) Set(key []byte, val []byte) {
 	kv.mutex.Lock()
 	defer kv.mutex.Unlock()
 	kv.data[string(key)] = val
-	return nil
 }
