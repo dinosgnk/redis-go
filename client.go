@@ -13,3 +13,7 @@ func NewClient(conn net.Conn) *Client {
 		cmdArgsCh: make(chan [][]byte),
 	}
 }
+
+func (c *Client) Send(resp []byte) {
+	c.conn.Write(resp)
+}
