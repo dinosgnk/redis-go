@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 )
 
 const defaultListenAddr = ":6379"
@@ -15,9 +14,9 @@ type Config struct {
 
 type Server struct {
 	Config
-	listener   net.Listener
-	cmdHandler *CommandHandler
-	cmdArgsCh  chan [][]byte
+	listener  net.Listener
+	cmdRouter *CommandRouter
+	cmdArgsCh chan [][]byte
 }
 
 func NewServer(cfg Config) *Server {
@@ -25,9 +24,9 @@ func NewServer(cfg Config) *Server {
 		cfg.ListenAddr = defaultListenAddr
 	}
 	return &Server{
-		Config:     cfg,
-		cmdHandler: NewCommandHandler(),
-		cmdArgsCh:  make(chan [][]byte),
+		Config:    cfg,
+		cmdRouter: NewCommandRouter(),
+		cmdArgsCh: make(chan [][]byte),
 	}
 }
 
@@ -70,15 +69,7 @@ func (server *Server) handleCommandLoop() {
 	var cmdArgs [][]byte
 	for {
 		cmdArgs = <-server.cmdArgsCh
-		cmd := strings.ToUpper(string(cmdArgs[0]))
-		switch cmd {
-		case "SET":
-			server.cmdHandler.Set(cmdArgs)
-		case "GET":
-			server.cmdHandler.Get(cmdArgs)
-		default:
-			log.Println("Unknown command")
-		}
+		go server.cmdRouter.Dispatch(cmdArgs)
 	}
 }
 
