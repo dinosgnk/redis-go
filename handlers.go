@@ -1,8 +1,6 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
 type CommandHandler struct {
 	kv *KVStore
