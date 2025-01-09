@@ -16,10 +16,11 @@ func (cmdHandler *CommandHandler) Get(cmd *Command) {
 	key := cmd.args[1]
 	val, ok := cmdHandler.kv.Get(key)
 	if !ok {
-		log.Printf("Key %v not found: ", string(key))
+		log.Printf("Key %v not found", string(key))
+		cmd.client.Send([]byte("$-1\r\n"))
+	} else {
+		cmd.client.Send(append(val, '\r', '\n'))
 	}
-
-	cmd.client.Send(append(val, '\r', '\n'))
 }
 
 func (cmdHandler *CommandHandler) Set(cmd *Command) {
