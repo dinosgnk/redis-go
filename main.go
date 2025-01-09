@@ -41,7 +41,7 @@ func (server *Server) Start() {
 
 	go server.handleCommandLoop()
 
-	log.Println(fmt.Sprintf("Redis-Go started, listening on %s", server.ListenAddr))
+	log.Printf("Redis-Go started, listening on %s", server.ListenAddr)
 
 	server.acceptLoop()
 }
@@ -59,7 +59,7 @@ func (server *Server) acceptLoop() {
 
 func (server *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
-	log.Println(fmt.Sprintf("New connection from %s", conn.RemoteAddr()))
+	log.Printf("New connection from %s", conn.RemoteAddr())
 	client := NewClient(conn)
 
 	resp := NewParser(client.conn)
