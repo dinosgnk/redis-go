@@ -75,7 +75,6 @@ func (server *Server) handleCommandLoop() {
 }
 
 func main() {
-
 	server := NewServer(Config{
 		ListenAddr: ":6379",
 	})
