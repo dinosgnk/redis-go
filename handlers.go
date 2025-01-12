@@ -3,15 +3,16 @@ package main
 import (
 	"fmt"
 	"log"
+	"redis-go/kvstore"
 )
 
 type CommandHandler struct {
-	kv *KVStore
+	kv kvstore.KVStore
 }
 
 func NewCommandHandler() *CommandHandler {
 	return &CommandHandler{
-		kv: NewKVStore(),
+		kv: kvstore.NewConcurrentMap(),
 	}
 }
 
@@ -41,10 +42,8 @@ func (cmdHandler *CommandHandler) Del(cmd *Command) {
 	log.Println(cmd.args)
 	log.Println(cmd.args[1:])
 	if len(cmd.args[1:]) >= 2 {
-		log.Println("1")
 		keysDeleted = cmdHandler.kv.BulkDel(cmd.args[1:])
 	} else {
-		log.Println("2")
 		keysDeleted = cmdHandler.kv.Del(cmd.args[1])
 	}
 
