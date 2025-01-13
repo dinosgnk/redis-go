@@ -1,6 +1,8 @@
 package kvstore
 
-import "sync"
+import (
+	"sync"
+)
 
 type ConcurrentMap struct {
 	mutex sync.RWMutex
@@ -44,4 +46,29 @@ func (cm *ConcurrentMap) BulkDel(keys [][]byte) int {
 		}
 	}
 	return keysDeleted
+}
+
+func (cm *ConcurrentMap) HSet(key []byte, field []byte, val []byte) int {
+	cm.mutex.Lock()
+	defer cm.mutex.Unlock()
+	if existingVal, valExists := cm.data[string(key)]; valExists {
+		if hash, valueIsMap := existingVal.(map[string][]byte); valueIsMap {
+			hash[string(field)] = val
+			return 0
+		}
+	}
+	cm.data[string(key)] = map[string][]byte{string(field): val}
+	return 1
+}
+
+func (cm *ConcurrentMap) HGet(key []byte, field []byte) ([]byte, bool) {
+	cm.mutex.RLock()
+	defer cm.mutex.RUnlock()
+	if existingVal, valExists := cm.data[string(key)]; valExists {
+		if hash, valueIsMap := existingVal.(map[string][]byte); valueIsMap {
+			val, ok := hash[string(field)]
+			return val, ok
+		}
+	}
+	return nil, false
 }

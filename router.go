@@ -24,6 +24,10 @@ func (cmdRouter *CommandRouter) Dispatch(cmd *Command) {
 		cmdRouter.cmdHandler.Get(cmd)
 	case "DEL":
 		cmdRouter.cmdHandler.Del(cmd)
+	case "HSET":
+		cmdRouter.cmdHandler.HSet(cmd)
+	case "HGET":
+		cmdRouter.cmdHandler.HGet(cmd)
 	default:
 		log.Println("Unknown command")
 	}
