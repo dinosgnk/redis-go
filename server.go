@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"redis-go/message"
+	"redis-go/protocol"
 )
 
 const defaultListenAddr = ":6379"
@@ -16,7 +18,6 @@ type Server struct {
 	Config
 	listener  net.Listener
 	cmdRouter *CommandRouter
-	cmdCh     chan *Command
 }
 
 func NewServer(cfg Config) *Server {
@@ -26,7 +27,6 @@ func NewServer(cfg Config) *Server {
 	return &Server{
 		Config:    cfg,
 		cmdRouter: NewCommandRouter(),
-		cmdCh:     make(chan *Command),
 	}
 }
 
@@ -38,8 +38,6 @@ func (server *Server) Start() {
 
 	server.listener = listener
 	defer server.listener.Close()
-
-	go server.handleCommandLoop()
 
 	log.Printf("Redis-Go started, listening on %s", server.ListenAddr)
 
@@ -60,16 +58,19 @@ func (server *Server) acceptLoop() {
 func (server *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("New connection from %s", conn.RemoteAddr())
-	client := NewClient(conn)
 
-	resp := NewParser(client.conn)
-	resp.Parse(client, server.cmdCh)
+	clientMsgCh := make(chan *message.Message)
+
+	go server.handleClientCommandsLoop(clientMsgCh)
+
+	parser := protocol.NewParser(conn)
+	parser.Parse(conn, clientMsgCh)
 }
 
-func (server *Server) handleCommandLoop() {
-	var cmd *Command
+func (server *Server) handleClientCommandsLoop(clientMsgCh <-chan *message.Message) {
+	var msg *message.Message
 	for {
-		cmd = <-server.cmdCh
-		go server.cmdRouter.Dispatch(cmd)
+		msg = <-clientMsgCh
+		go server.cmdRouter.Dispatch(msg)
 	}
 }

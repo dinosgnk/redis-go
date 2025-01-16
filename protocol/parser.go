@@ -1,10 +1,12 @@
-package main
+package protocol
 
 import (
 	"bufio"
 	"bytes"
 	"io"
 	"log"
+	"net"
+	"redis-go/message"
 	"strconv"
 )
 
@@ -57,7 +59,7 @@ func (p *Parser) ParseArray(arrayHeader []byte) [][]byte {
 	return elements
 }
 
-func (p *Parser) Parse(client *Client, cmdCh chan<- *Command) error {
+func (p *Parser) Parse(conn net.Conn, clientMsgCh chan<- *message.Message) error {
 
 	for {
 		line, err := p.reader.ReadBytes('\n')
@@ -71,8 +73,8 @@ func (p *Parser) Parse(client *Client, cmdCh chan<- *Command) error {
 		switch _type {
 		case '*':
 			cmdArgs := p.ParseArray(line)
-			cmd := NewCommand(cmdArgs, client)
-			cmdCh <- cmd
+			msg := message.NewMessage(cmdArgs, conn)
+			clientMsgCh <- msg
 		default:
 			log.Println("TODO")
 			continue

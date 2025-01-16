@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"redis-go/message"
 	"strings"
 )
 
@@ -15,19 +16,21 @@ func NewCommandRouter() *CommandRouter {
 	}
 }
 
-func (cmdRouter *CommandRouter) Dispatch(cmd *Command) {
-	name := strings.ToUpper(string(cmd.name))
-	switch name {
+func (cmdRouter *CommandRouter) Dispatch(msg *message.Message) {
+	header := strings.ToUpper(string(msg.Header))
+	cmdArgs := msg.CmdArgs
+	conn := msg.Conn
+	switch header {
 	case "SET":
-		cmdRouter.cmdHandler.Set(cmd)
+		cmdRouter.cmdHandler.Set(conn, cmdArgs)
 	case "GET":
-		cmdRouter.cmdHandler.Get(cmd)
+		cmdRouter.cmdHandler.Get(conn, cmdArgs)
 	case "DEL":
-		cmdRouter.cmdHandler.Del(cmd)
+		cmdRouter.cmdHandler.Del(conn, cmdArgs)
 	case "HSET":
-		cmdRouter.cmdHandler.HSet(cmd)
+		cmdRouter.cmdHandler.HSet(conn, cmdArgs)
 	case "HGET":
-		cmdRouter.cmdHandler.HGet(cmd)
+		cmdRouter.cmdHandler.HGet(conn, cmdArgs)
 	default:
 		log.Println("Unknown command")
 	}

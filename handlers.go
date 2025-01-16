@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"redis-go/kvstore"
 )
 
@@ -16,10 +17,10 @@ func NewCommandHandler() *CommandHandler {
 	}
 }
 
-func (cmdHandler *CommandHandler) Get(cmd *Command) {
+func (cmdHandler *CommandHandler) Get(conn net.Conn, cmdArgs [][]byte) {
 	var reply []byte
 
-	key := cmd.args[1]
+	key := cmdArgs[1]
 
 	if val, ok := cmdHandler.kv.Get(key); !ok {
 		log.Printf("Key %v not found", string(key))
@@ -28,41 +29,41 @@ func (cmdHandler *CommandHandler) Get(cmd *Command) {
 		reply = append([]byte{'+'}, val...)
 		reply = append(reply, '\r', '\n')
 	}
-	cmd.client.Send(reply)
+	conn.Write(reply)
 }
 
-func (cmdHandler *CommandHandler) Set(cmd *Command) {
-	key := cmd.args[1]
-	val := cmd.args[2]
+func (cmdHandler *CommandHandler) Set(conn net.Conn, cmdArgs [][]byte) {
+	key := cmdArgs[1]
+	val := cmdArgs[2]
 	cmdHandler.kv.Set(key, val)
-	cmd.client.Send([]byte("+OK\r\n"))
+	conn.Write([]byte("+OK\r\n"))
 }
 
-func (cmdHandler *CommandHandler) Del(cmd *Command) {
+func (cmdHandler *CommandHandler) Del(conn net.Conn, cmdArgs [][]byte) {
 	var keysDeleted int
-	log.Println(cmd.args)
-	log.Println(cmd.args[1:])
-	if len(cmd.args[1:]) >= 2 {
-		keysDeleted = cmdHandler.kv.BulkDel(cmd.args[1:])
+	log.Println(cmdArgs)
+	log.Println(cmdArgs[1:])
+	if len(cmdArgs[1:]) >= 2 {
+		keysDeleted = cmdHandler.kv.BulkDel(cmdArgs[1:])
 	} else {
-		keysDeleted = cmdHandler.kv.Del(cmd.args[1])
+		keysDeleted = cmdHandler.kv.Del(cmdArgs[1])
 	}
 
-	cmd.client.Send([]byte(fmt.Sprintf(":%d\r\n", keysDeleted)))
+	conn.Write([]byte(fmt.Sprintf(":%d\r\n", keysDeleted)))
 }
 
-func (cmdHandler *CommandHandler) HSet(cmd *Command) {
-	key := cmd.args[1]
-	field := cmd.args[2]
-	val := cmd.args[3]
+func (cmdHandler *CommandHandler) HSet(conn net.Conn, cmdArgs [][]byte) {
+	key := cmdArgs[1]
+	field := cmdArgs[2]
+	val := cmdArgs[3]
 	fieldsAdded := cmdHandler.kv.HSet(key, field, val)
-	cmd.client.Send([]byte(fmt.Sprintf(":%d\r\n", fieldsAdded)))
+	conn.Write([]byte(fmt.Sprintf(":%d\r\n", fieldsAdded)))
 }
 
-func (cmdHandler *CommandHandler) HGet(cmd *Command) {
+func (cmdHandler *CommandHandler) HGet(conn net.Conn, cmdArgs [][]byte) {
 	var reply []byte
-	key := cmd.args[1]
-	field := cmd.args[2]
+	key := cmdArgs[1]
+	field := cmdArgs[2]
 
 	if val, ok := cmdHandler.kv.HGet(key, field); !ok {
 		log.Printf("Key %v not found", string(key))
@@ -71,5 +72,5 @@ func (cmdHandler *CommandHandler) HGet(cmd *Command) {
 		reply = append([]byte{'+'}, val...)
 		reply = append(reply, '\r', '\n')
 	}
-	cmd.client.Send(reply)
+	conn.Write(reply)
 }
