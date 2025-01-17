@@ -18,8 +18,13 @@ func NewConcurrentMap() *ConcurrentMap {
 func (cm *ConcurrentMap) Get(key []byte) ([]byte, bool) {
 	cm.mutex.RLock()
 	defer cm.mutex.RUnlock()
-	val, ok := cm.data[string(key)]
-	return val.([]byte), ok
+
+	if val, ok := cm.data[string(key)]; ok {
+		if val, ok := val.([]byte); ok {
+			return val, ok
+		}
+	}
+	return nil, false
 }
 
 func (cm *ConcurrentMap) Set(key []byte, val []byte) {
