@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -7,17 +7,17 @@ import (
 	"redis-go/kvstore"
 )
 
-type CommandHandler struct {
+type Handler struct {
 	kv kvstore.KVStore
 }
 
-func NewCommandHandler() *CommandHandler {
-	return &CommandHandler{
+func NewHandler() *Handler {
+	return &Handler{
 		kv: kvstore.NewConcurrentMap(),
 	}
 }
 
-func (cmdHandler *CommandHandler) Get(conn net.Conn, cmdArgs [][]byte) {
+func (cmdHandler *Handler) Get(conn net.Conn, cmdArgs [][]byte) {
 	var reply []byte
 
 	key := cmdArgs[1]
@@ -32,14 +32,14 @@ func (cmdHandler *CommandHandler) Get(conn net.Conn, cmdArgs [][]byte) {
 	conn.Write(reply)
 }
 
-func (cmdHandler *CommandHandler) Set(conn net.Conn, cmdArgs [][]byte) {
+func (cmdHandler *Handler) Set(conn net.Conn, cmdArgs [][]byte) {
 	key := cmdArgs[1]
 	val := cmdArgs[2]
 	cmdHandler.kv.Set(key, val)
 	conn.Write([]byte("+OK\r\n"))
 }
 
-func (cmdHandler *CommandHandler) Del(conn net.Conn, cmdArgs [][]byte) {
+func (cmdHandler *Handler) Del(conn net.Conn, cmdArgs [][]byte) {
 	var keysDeleted int
 	log.Println(cmdArgs)
 	log.Println(cmdArgs[1:])
@@ -52,7 +52,7 @@ func (cmdHandler *CommandHandler) Del(conn net.Conn, cmdArgs [][]byte) {
 	conn.Write([]byte(fmt.Sprintf(":%d\r\n", keysDeleted)))
 }
 
-func (cmdHandler *CommandHandler) HSet(conn net.Conn, cmdArgs [][]byte) {
+func (cmdHandler *Handler) HSet(conn net.Conn, cmdArgs [][]byte) {
 	key := cmdArgs[1]
 	field := cmdArgs[2]
 	val := cmdArgs[3]
@@ -60,7 +60,7 @@ func (cmdHandler *CommandHandler) HSet(conn net.Conn, cmdArgs [][]byte) {
 	conn.Write([]byte(fmt.Sprintf(":%d\r\n", fieldsAdded)))
 }
 
-func (cmdHandler *CommandHandler) HGet(conn net.Conn, cmdArgs [][]byte) {
+func (cmdHandler *Handler) HGet(conn net.Conn, cmdArgs [][]byte) {
 	var reply []byte
 	key := cmdArgs[1]
 	field := cmdArgs[2]

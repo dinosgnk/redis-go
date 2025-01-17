@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"log"
@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-type CommandRouter struct {
-	cmdHandler *CommandHandler
+type Router struct {
+	cmdHandler *Handler
 }
 
-func NewCommandRouter() *CommandRouter {
-	return &CommandRouter{
-		cmdHandler: NewCommandHandler(),
+func NewRouter() *Router {
+	return &Router{
+		cmdHandler: NewHandler(),
 	}
 }
 
-func (cmdRouter *CommandRouter) Dispatch(msg *message.Message) {
+func (cmdRouter *Router) Route(msg *message.Message) {
 	header := strings.ToUpper(string(msg.Header))
 	cmdArgs := msg.CmdArgs
 	conn := msg.Conn

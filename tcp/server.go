@@ -1,9 +1,10 @@
-package main
+package tcp
 
 import (
 	"fmt"
 	"log"
 	"net"
+	"redis-go/commands"
 	"redis-go/message"
 	"redis-go/protocol"
 )
@@ -17,7 +18,7 @@ type Config struct {
 type Server struct {
 	Config
 	listener  net.Listener
-	cmdRouter *CommandRouter
+	cmdRouter *commands.Router
 }
 
 func NewServer(cfg Config) *Server {
@@ -26,7 +27,7 @@ func NewServer(cfg Config) *Server {
 	}
 	return &Server{
 		Config:    cfg,
-		cmdRouter: NewCommandRouter(),
+		cmdRouter: commands.NewRouter(),
 	}
 }
 
@@ -71,6 +72,6 @@ func (server *Server) handleClientCommandsLoop(clientMsgCh <-chan *message.Messa
 	var msg *message.Message
 	for {
 		msg = <-clientMsgCh
-		go server.cmdRouter.Dispatch(msg)
+		go server.cmdRouter.Route(msg)
 	}
 }
