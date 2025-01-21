@@ -1,12 +1,12 @@
-package tcp
+package server
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
 	"redis-go/commands"
-	"redis-go/message"
-	"redis-go/protocol"
+	"redis-go/resp"
 )
 
 const defaultListenAddr = ":6379"
@@ -17,17 +17,17 @@ type Config struct {
 
 type Server struct {
 	Config
-	listener  net.Listener
-	cmdRouter *commands.Router
+	listener       net.Listener
+	commandHandler *commands.CommandHandler
 }
 
-func NewServer(cfg Config) *Server {
+func NewServer(cfg Config, cmdHandler *commands.CommandHandler) *Server {
 	if len(cfg.ListenAddr) == 0 {
 		cfg.ListenAddr = defaultListenAddr
 	}
 	return &Server{
-		Config:    cfg,
-		cmdRouter: commands.NewRouter(),
+		Config:         cfg,
+		commandHandler: cmdHandler,
 	}
 }
 
@@ -42,10 +42,10 @@ func (server *Server) Start() {
 
 	log.Printf("Redis-Go started, listening on %s", server.ListenAddr)
 
-	server.acceptLoop()
+	server.acceptConnections()
 }
 
-func (server *Server) acceptLoop() {
+func (server *Server) acceptConnections() {
 	for {
 		conn, err := server.listener.Accept()
 		if err != nil {
@@ -60,18 +60,11 @@ func (server *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("New connection from %s", conn.RemoteAddr())
 
-	clientMsgCh := make(chan *message.Message)
+	clientBuf := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
-	go server.handleClientCommandsLoop(clientMsgCh)
-
-	parser := protocol.NewParser(conn)
-	parser.Parse(conn, clientMsgCh)
-}
-
-func (server *Server) handleClientCommandsLoop(clientMsgCh <-chan *message.Message) {
-	var msg *message.Message
 	for {
-		msg = <-clientMsgCh
-		go server.cmdRouter.Route(msg)
+		cmdArgs, _ := resp.Parse(clientBuf.Reader)
+		reply := server.commandHandler.Handle(cmdArgs)
+		conn.Write(reply)
 	}
 }

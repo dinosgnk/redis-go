@@ -1,10 +1,22 @@
 package main
 
-import "redis-go/tcp"
+import (
+	"redis-go/commands"
+	"redis-go/kvstore"
+	"redis-go/server"
+)
 
 func main() {
-	server := tcp.NewServer(tcp.Config{
-		ListenAddr: ":6379",
-	})
+
+	kv := kvstore.NewConcurrentMap()
+	cmdHandler := commands.NewCommandHandler(kv)
+
+	server := server.NewServer(
+		server.Config{
+			ListenAddr: ":6379",
+		},
+		cmdHandler,
+	)
+
 	server.Start()
 }
