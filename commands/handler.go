@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"redis-go/kvstore"
 	"strings"
 )
@@ -37,8 +36,11 @@ func (cmdHandler *CommandHandler) Handle(cmdArgs [][]byte) []byte {
 	case "HGET":
 		reply = cmdHandler.execHGet(cmdArgs)
 	default:
-		log.Println("Unknown command")
-		reply = []byte("Error")
+		stringCmdArgs := make([]string, len(cmdArgs))
+		for i, arg := range cmdArgs {
+			stringCmdArgs[i] = string(arg)
+		}
+		reply = []byte(fmt.Sprintf("-ERR unknown command '%+v'\r\n", strings.Join(stringCmdArgs, " ")))
 	}
 
 	return reply
