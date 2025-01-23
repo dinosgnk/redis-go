@@ -63,7 +63,11 @@ func (server *Server) handleConnection(conn net.Conn) {
 	clientBuf := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 	for {
-		cmdArgs, _ := resp.Parse(clientBuf.Reader)
+		cmdArgs, err := resp.Parse(clientBuf.Reader)
+		if err != nil {
+			log.Printf("Connection from %v closed by client", conn.RemoteAddr())
+			break
+		}
 		reply := server.commandHandler.Handle(cmdArgs)
 		conn.Write(reply)
 	}

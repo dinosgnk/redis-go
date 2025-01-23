@@ -51,7 +51,7 @@ func ParseArray(arrayHeader []byte, reader *bufio.Reader) ([][]byte, error) {
 func Parse(reader *bufio.Reader) ([][]byte, error) {
 	line, err := reader.ReadBytes('\n')
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	switch line[0] {
