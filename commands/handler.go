@@ -45,15 +45,14 @@ func (cmdHandler *CommandHandler) Handle(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execGet(cmdArgs [][]byte) []byte {
-	var reply []byte
 	key := cmdArgs[1]
-	if val, ok := cmdHandler.kvStore.Get(key); !ok {
-		reply = []byte("$-1\r\n")
-	} else {
-		reply = append([]byte{'+'}, val...)
-		reply = append(reply, '\r', '\n')
+
+	val, ok := cmdHandler.kvStore.Get(key)
+	if !ok {
+		return []byte("$-1\r\n")
 	}
-	return reply
+
+	return []byte("+" + string(val) + "\r\n")
 }
 
 func (cmdHandler *CommandHandler) execSet(cmdArgs [][]byte) []byte {
@@ -83,15 +82,12 @@ func (cmdHandler *CommandHandler) execHSet(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execHGet(cmdArgs [][]byte) []byte {
-	var reply []byte
-	key := cmdArgs[1]
-	field := cmdArgs[2]
+	key, field := cmdArgs[1], cmdArgs[2]
 
-	if val, ok := cmdHandler.kvStore.HGet(key, field); !ok {
-		reply = []byte("$-1\r\n")
-	} else {
-		reply = append([]byte{'+'}, val...)
-		reply = append(reply, '\r', '\n')
+	val, ok := cmdHandler.kvStore.HGet(key, field)
+	if !ok {
+		return []byte("$-1\r\n")
 	}
-	return reply
+
+	return []byte("+" + string(val) + "\r\n")
 }
