@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 	"redis-go/commands"
-	"redis-go/resp"
+	"redis-go/protocol"
 )
 
 const defaultListenAddr = ":6379"
@@ -63,7 +63,7 @@ func (server *Server) handleConnection(conn net.Conn) {
 	clientBuf := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 	for {
-		cmdArgs, err := resp.Parse(clientBuf.Reader)
+		cmdArgs, err := protocol.Parse(clientBuf.Reader)
 		if err != nil {
 			log.Printf("Connection from %v closed by client", conn.RemoteAddr())
 			break
