@@ -33,14 +33,7 @@ func (cm *ConcurrentMap) Set(key []byte, val []byte) {
 	cm.data[string(key)] = val
 }
 
-func (cm *ConcurrentMap) Del(key []byte) int {
-	cm.mutex.Lock()
-	defer cm.mutex.Unlock()
-	delete(cm.data, string(key))
-	return 1
-}
-
-func (cm *ConcurrentMap) BulkDel(keys [][]byte) int {
+func (cm *ConcurrentMap) Del(keys [][]byte) int {
 	keysDeleted := 0
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()

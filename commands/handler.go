@@ -65,12 +65,7 @@ func (cmdHandler *CommandHandler) execSet(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execDel(cmdArgs [][]byte) []byte {
-	var keysDeleted int
-	if len(cmdArgs[1:]) >= 2 {
-		keysDeleted = cmdHandler.kvStore.BulkDel(cmdArgs[1:])
-	} else {
-		keysDeleted = cmdHandler.kvStore.Del(cmdArgs[1])
-	}
+	keysDeleted := cmdHandler.kvStore.Del(cmdArgs[1:])
 
 	return []byte(fmt.Sprintf(":%d\r\n", keysDeleted))
 }
