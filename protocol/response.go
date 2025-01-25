@@ -12,6 +12,10 @@ func IntResponse(num int) []byte {
 	return []byte(fmt.Sprintf(":%d\r\n", num))
 }
 
+func NumOfArgumentsErrorResponse(cmd []byte) []byte {
+	return []byte(fmt.Sprintf("-ERR wrong number of arguments for '%v' command", cmd))
+}
+
 func NullBulkStringRespone() []byte {
 	return []byte("$-1\r\n")
 }

@@ -48,8 +48,10 @@ func (cmdHandler *CommandHandler) Handle(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execGet(cmdArgs [][]byte) []byte {
+	if len(cmdArgs) != 2 {
+		return protocol.NumOfArgumentsErrorResponse(cmdArgs[0])
+	}
 	key := cmdArgs[1]
-
 	val, ok := cmdHandler.kvStore.Get(key)
 	if !ok {
 		return protocol.NullBulkStringRespone()
@@ -59,8 +61,10 @@ func (cmdHandler *CommandHandler) execGet(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execSet(cmdArgs [][]byte) []byte {
-	key := cmdArgs[1]
-	val := cmdArgs[2]
+	if len(cmdArgs) != 3 {
+		return protocol.NumOfArgumentsErrorResponse(cmdArgs[0])
+	}
+	key, val := cmdArgs[0], cmdArgs[1]
 	cmdHandler.kvStore.Set(key, val)
 	return protocol.SimpleStringRespone([]byte("OK"))
 }
@@ -71,16 +75,19 @@ func (cmdHandler *CommandHandler) execDel(cmdArgs [][]byte) []byte {
 }
 
 func (cmdHandler *CommandHandler) execHSet(cmdArgs [][]byte) []byte {
-	key := cmdArgs[1]
-	field := cmdArgs[2]
-	val := cmdArgs[3]
+	if len(cmdArgs) != 4 {
+		return protocol.NumOfArgumentsErrorResponse(cmdArgs[0])
+	}
+	key, field, val := cmdArgs[1], cmdArgs[2], cmdArgs[3]
 	fieldsAdded := cmdHandler.kvStore.HSet(key, field, val)
 	return protocol.IntResponse(fieldsAdded)
 }
 
 func (cmdHandler *CommandHandler) execHGet(cmdArgs [][]byte) []byte {
+	if len(cmdArgs) != 3 {
+		return protocol.NumOfArgumentsErrorResponse(cmdArgs[0])
+	}
 	key, field := cmdArgs[1], cmdArgs[2]
-
 	val, ok := cmdHandler.kvStore.HGet(key, field)
 	if !ok {
 		return protocol.NullBulkStringRespone()
