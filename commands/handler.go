@@ -64,7 +64,7 @@ func (cmdHandler *CommandHandler) execSet(cmdArgs [][]byte) []byte {
 	if len(cmdArgs) != 3 {
 		return protocol.NumOfArgumentsErrorResponse(cmdArgs[0])
 	}
-	key, val := cmdArgs[0], cmdArgs[1]
+	key, val := cmdArgs[1], cmdArgs[2]
 	cmdHandler.kvStore.Set(key, val)
 	return protocol.SimpleStringRespone([]byte("OK"))
 }
